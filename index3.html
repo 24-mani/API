@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blog Posts</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    
+    body {
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);}
+      .body {
+
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      padding: 40px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 3em;
+      animation: slideDown 1s ease-out;
+    }
+
+    .post {
+      
+      background: rgba(255, 255, 255, 0.05);
+      padding: 20px;
+      border-radius: 12px;
+      margin: 20px auto;
+      max-width: 600px;
+      box-shadow: 0 0 10px #00f2ff;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeInUp 1s ease;
+      position: relative;
+    }
+
+    .post:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px #00ffcc;
+    }
+
+    .post h2 {
+      color: #0ff;
+    }
+
+    .delete-btn {
+      margin-top: 10px;
+      background: #ff4444;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    .delete-btn:hover {
+      background: #cc0000;
+    }
+
+    .cmt-btn {
+      margin-top: 10px;
+      background: #555dff;
+      border: none;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: white;
+      transition: background 0.3s;
+    }
+
+    .cmt-btn:hover {
+      background: #09a4dc;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes fadeInUp {
+      from { transform: translateY(40px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .img{
+      position: absolute;
+      width: 150px;
+      height: 150px;
+      top: 25px;
+      right: 25px;
+    }
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+      position: relative;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+    .export-buttons{
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <nav >
+    <div class="navbar">
+      <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+    </div>
+    <div class="export-buttons text-end">
+      <button id="export-csv-btn" class="btn btn-success">Export to CSV</button>
+    </div>
+  </nav>
+
+
+  <div class="body">
+<h1>All Blog Posts</h1>
+
+
+
+
+
+<div id="posts-container"></div>
+</div>
+
+<script>
+  const API_BASE = 'http://127.0.0.1:8000';
+  const token = localStorage.getItem('access_token');
+
+  async function fetchPosts() {
+    const res = await fetch(`${API_BASE}/posts/`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+    const data = await res.json();
+    renderPosts(data);
+  }
+
+  function renderPosts(posts) {
+    const container = document.getElementById('posts-container');
+    container.innerHTML = '';
+    posts.forEach(post => {
+      const imageUrl = post.file ? `http://127.0.0.1:8000${post.file}` : '';
+      const div = document.createElement('div');
+      div.className = 'post';
+      div.innerHTML = `
+        <h2>${post.title}</h2>
+        <p style="width:80%;">${post.content}</p>
+        ${imageUrl ? `<img src="${imageUrl}" alt="Post Image" class="img" />` : ''}
+        <div style="display:flex;">
+        <button class="delete-btn" onclick="deletePost(${post.id}, this)">Delete</button>
+        <a href="index7.html?id=${post.id}" class="btn cmt-btn ms-2">Comment</a>
+        <a href="index6.html?id=${post.id}" class="btn cmt-btn ms-2 ">Update</a>
+      `;
+      container.appendChild(div);
+    });
+  }
+
+  async function deletePost(postId, button) {
+    const confirmed = confirm("Are you sure you want to delete this post?");
+    if (!confirmed) return;
+
+    const res = await fetch(`http://127.0.0.1:8000/posts/${postId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (res.ok) {
+      button.closest('.post').remove();
+      alert("Post deleted successfully!");
+    } else {
+      alert("Failed to delete post.");
+    }
+  }
+
+  fetchPosts();
+
+
+
+
+  document.getElementById('export-csv-btn').addEventListener('click', async () => {
+      const token = localStorage.getItem('access_token');
+      if (!token) {
+        alert("Please log in first.");
+        return;
+      }
+
+      try {
+        // Fetch blog posts data from your API
+        const response = await fetch('http://127.0.0.1:8000/posts/', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch posts");
+        }
+
+        const posts = await response.json();
+
+        // Convert JSON to CSV
+        const headers = ['ID', 'Title', 'Content', 'File'];
+        const csvRows = [headers.join(',')];
+
+        posts.forEach(post => {
+          const row = [
+            post.id,
+            `"${post.title.replace(/"/g, '""')}"`, // escape quotes
+            `"${post.content.replace(/"/g, '""')}"`,
+            post.file || ''
+          ];
+          csvRows.push(row.join(','));
+        });
+
+        const csvContent = csvRows.join('\n');
+
+        // Trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'posts.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+      } catch (error) {
+        console.error(error);
+        alert("Error exporting posts to CSV.");
+      }
+    });
+</script>
+
+</body>
+</html>

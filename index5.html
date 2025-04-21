@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Audit Log</title>
+  <style>
+    body {
+      background: #0f2027;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      animation: fadeIn 2s ease;
+    }
+    h1 {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 2.5rem;
+      animation: bounceIn 1s ease-in-out;
+    }
+    .log-container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #1c1c1c;
+      border-radius: 15px;
+      box-shadow: 0 0 15px #00ffc8;
+      animation: slideIn 2s ease;
+    }
+    .log-entry {
+      background: #2b2b2b;
+      margin-bottom: 15px;
+      padding: 15px;
+      border-left: 5px solid #00ffc8;
+      border-radius: 8px;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+    .log-entry:hover {
+      transform: scale(1.03);
+      background: #383838;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes bounceIn {
+      0% { transform: scale(0.5); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes slideIn {
+      0% { transform: translateY(30px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+
+    .button-group {
+      display: flex;
+      justify-content: center;
+      margin-top: 30px;
+      gap: 20px;
+    }
+
+    .filter-btn {
+      padding: 10px 20px;
+      background: #00ffc8;
+      border: none;
+      border-radius: 10px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      font-size: 16px;
+    }
+
+    .filter-btn:hover {
+      background: #00bfa5;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="navbar">
+      <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+    </div>
+  </nav>
+
+  <h1>Audit Log</h1>
+
+  <div class="button-group">
+    <button class="filter-btn" onclick="filterLogs('ALL')">ALL</button>
+    <button class="filter-btn" onclick="filterLogs('DELETE')">Delete</button>
+    <button class="filter-btn" onclick="filterLogs('UPDATE')">Update</button>
+  </div>
+
+  <div class="log-container" id="log-container">
+    <!-- Logs will be inserted here -->
+  </div>
+
+  <script>
+    let allLogs = [];
+
+    async function fetchLogs() {
+      const token = localStorage.getItem("access_token");
+      try {
+        const res = await fetch("http://127.0.0.1:8000/audit-logs/", {
+          method: "GET",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        allLogs = await res.json();
+        filterLogs("ALL");
+      } catch (error) {
+        document.getElementById("log-container").innerHTML = "<p>Error loading logs.</p>";
+        console.error("Error fetching audit logs:", error);
+      }
+    }
+
+    function filterLogs(type) {
+      const container = document.getElementById("log-container");
+      container.innerHTML = "";
+
+      const filteredLogs = type === "ALL"
+        ? allLogs
+        : allLogs.filter(log => log.action.toUpperCase() === type.toUpperCase());
+
+      if (filteredLogs.length === 0) {
+        container.innerHTML = "<p>No matching audit logs found.</p>";
+        return;
+      }
+
+      filteredLogs.forEach(log => {
+        container.innerHTML += `
+          <div class="log-entry">
+            <strong>Model:</strong> ${log.model}<br>
+            <strong>Action:</strong> ${log.action}<br>
+            <strong>Object ID:</strong> ${log.object_id}<br>
+            <strong>Time:</strong> ${log.timestamp}<br>
+            ${log.changed_data ? `<strong>Old Data:</strong> ${log.changed_data}` : ''}
+          </div>
+        `;
+      });
+    }
+
+    window.onload = fetchLogs;
+  </script>
+</body>
+</html>

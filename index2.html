@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>JWT Blog Example</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+body{
+  background: radial-gradient(circle at center, #111, #000);
+}
+    .body {
+      background: radial-gradient(circle at center, #111, #000);
+      color: #fff;
+      padding: 30px;
+      animation: fadeIn 2s ease;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-top: 30px;
+      animation: slideIn 1s ease;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      box-shadow: 0 0 15px #0ff;
+      animation: glowFadeIn 1.5s ease;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    input, textarea {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      outline: none;
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: #aaa;
+    }
+
+    button {
+      background: linear-gradient(to right, #00f2ff, #007bff);
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px #0ff;
+    }
+
+    #post-status, #login-status {
+      text-align: center;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    #fetch-posts {
+      display: block;
+      margin: 0 auto;
+      margin-bottom: 20px;
+    }
+
+    #all-posts {
+      max-width: 800px;
+      margin: 20px auto;
+      animation: slideFadeIn 1.5s ease;
+    }
+
+    #all-posts h3 {
+      color: #0ff;
+    }
+
+    #all-posts p {
+      color: #ccc;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: linear-gradient(to right, transparent, #0ff, transparent);
+      margin: 40px 0;
+    }
+
+    /* 🔥 Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-50px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes glowFadeIn {
+      0% { opacity: 0; box-shadow: none; }
+      100% { opacity: 1; box-shadow: 0 0 15px #0ff; }
+    }
+
+    @keyframes slideFadeIn {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+    .img{
+      width: 100px;
+    display: block;
+    margin-left: auto;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .export-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #00796b;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #004d40;
+    }
+
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="navbar">
+      <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+      
+    </div>
+  </nav>
+
+ 
+
+  <div class="body">
+
+  <h2>All Blog Posts</h2>
+
+  
+  
+  <div id="all-posts"></div>
+  </div>
+  
+    
+    <script>
+      window.addEventListener('load', async function () {
+        const token = localStorage.getItem("access_token");
+        if (!token) return alert("Please log in first.");
+    
+        const response = await fetch("http://127.0.0.1:8000/posts/", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
+    
+        const posts = await response.json();
+    
+        let output = "";
+        posts.forEach(post => {
+          
+          output += `
+            <h3>${post.title}</h3>
+            <p>${post.content}            </p>
+
+            <a href="index8.html?id=${post.id}">Write & Read a Comment _ ${post.id}</a>
+            <hr>`;
+        });
+    
+        document.getElementById("all-posts").innerHTML = output || "No posts found.";
+      });
+
+
+      
+    </script>
+    
+</body>
+</html>

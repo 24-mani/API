@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post Comments</title>
+    <style>
+        /* styles.css */
+:root {
+    --card-bg: #fff;
+    --card-border: #ddd;
+    --card-hover-bg: #f9f9f9;
+    --btn-bg: #4CAF50;
+    --btn-hover-bg: #45a049;
+    --btn-color: #fff;
+    --btn-border: none;
+    --padding: 1rem;
+    --heading-color: #333;
+}
+
+.body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    
+    background-color: #f4f4f4;
+}
+
+#post-container   {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+#comments-container {
+
+    
+    width: 80%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.cards-holder {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-10px);
+    background-color: var(--card-hover-bg);
+}
+
+.card-body {
+    padding: var(--padding);
+    text-align: left;
+    position: relative;
+}
+
+.card-body p {
+    margin: 0;
+    font-size: 1rem;
+    color: #555;
+}
+
+#comment-form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#commentContent {
+    width: 100%;
+    max-width: 600px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    font-size: 1rem;
+    color: #333;
+    resize: none;
+}
+
+#submitCommentBtn {
+    padding: 0.5rem 2rem;
+    background-color: var(--btn-bg);
+    color: var(--btn-color);
+    border: var(--btn-border);
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#submitCommentBtn:hover {
+    background-color: var(--btn-hover-bg);
+}
+
+.name{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 10px !important;
+    font-weight: 600;
+}
+nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="navbar">
+        <a href="index.html">Login</a>
+        <a href="index1.html">blog_create</a>
+        <a href="index2.html">Get All Blog</a>
+        <a href="index3.html">Get All Blog Spl</a>
+        <a href="index4.html">Nested_comments</a>
+        <a href="index5.html">Audit Log</a>
+      
+    </div>
+  </nav>
+  <div class="body">
+    <div id="post-container">
+        <h1 style="text-align: center;" id="post-title"></h1>
+        <p id="post-content"></p>
+    </div>
+    <div id="comments-container">
+        <h2>Comments </h2>
+        <div id="comments-list" class="cards-holder"></div>
+        <div id="comment-form-container">
+            <h4>Post Comment : </h4>
+    
+    <textarea id="commentContent" rows="4" cols="50"></textarea>
+    <br>
+    <button id="submitCommentBtn">Submit Comment</button>
+        </div>
+
+
+        <br>
+    
+
+    <div class="status" id="statusResult"></div>
+    </div>
+    <div class="logins" >
+  
+        
+        </div>
+    
+    </div>
+    <script >
+
+function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param);
+            }
+
+        // Get the 'id' from the URL and display it
+
+        const postId = getQueryParam('id');
+        //blog comment write and read
+        document.addEventListener('DOMContentLoaded', function () {
+
+const postTitle = document.getElementById('post-title');
+const postContent = document.getElementById('post-content');
+const commentsList = document.getElementById('comments-list');
+const submitCommentBtn = document.getElementById('submitCommentBtn');
+const token = localStorage.getItem('access_token');
+console.log("JWT Token:", token);
+
+if (!token) {
+    alert("Please log in first.");
+    return;
+}
+
+// Fetch post details
+fetch(`http://127.0.0.1:8000/posts/${postId}/`, {
+    method: "GET",
+    headers: {
+        "Authorization": `Bearer ${token}`
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+    return response.json();
+})
+.then(data => {
+    postTitle.innerText = "Title: " + data.title;
+    postContent.innerText = "Content: " + data.content;
+})
+.catch(error => {
+    console.error('Error fetching post:', error);
+    alert("Error fetching post details.");
+});
+
+// Fetch comments
+fetch(`http://127.0.0.1:8000/posts/${postId}/comments/`, {
+    method: "GET",
+    headers: {
+        "Authorization": `Bearer ${token}`
+    }
+})
+.then(response => {
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+    }
+    return response.json();
+})
+.then(comments => {
+commentsList.innerHTML = '';
+comments.forEach(comment => {
+    const card = document.createElement('div');
+    card.classList.add('card');
+    card.innerHTML = `
+        <div class="card-body">
+            <p>${comment.content}</p>
+            <p class="name">👤 ${comment.username}</p>
+        </div>
+    `;
+    commentsList.appendChild(card);
+    // Apply fade-in animation
+    setTimeout(() => {
+        card.style.opacity = 1;
+        card.style.transition = 'opacity 0.5s ease';
+    }, 100);
+});
+})
+.catch(error => {
+    console.error('Error fetching comments:', error);
+    alert("Error fetching comments.");
+});
+
+});
+
+   
+
+// Add new comment
+
+document.getElementById('submitCommentBtn').addEventListener('click', function() {
+    // Get the token when the comment is being submitted
+    const token = localStorage.getItem('access_token');
+    
+    // Check if the token exists
+    if (!token) {
+        alert("You must be logged in to submit a comment.");
+        return;
+    }
+
+    const commentContent = document.getElementById('commentContent').value;
+
+    if (!commentContent) {
+        document.getElementById('statusResult').textContent = "Please write a comment.";
+        return;
+    }
+
+    // POST request to add a comment
+    fetch(`http://127.0.0.1:8000/posts/${postId}/comments/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // Pass the token here
+        },
+        body: JSON.stringify({
+            content: commentContent
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.ok) {
+            document.getElementById('statusResult').textContent = "Comment added successfully!";
+        } else {
+            alert("Success: " + JSON.stringify(data));
+            window.location.href = `index8.html?id=${postId}`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('statusResult').textContent = "An error occurred.";
+    });
+});
+    </script>
+</body>
+</html>

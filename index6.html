@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Update Blog Post</title>
+  <style>
+    .body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f8f8f8, #e0f7fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    .form-container {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      width: 400px;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #00796b;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      transition: 0.3s;
+      font-size: 1em;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #00796b;
+      box-shadow: 0 0 8px rgba(0, 121, 107, 0.3);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #00796b;
+      color: white;
+      font-size: 1em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease-in-out;
+    }
+
+    button:hover {
+      background: #004d40;
+    }
+
+    #error-message {
+      color: red;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 0.95em;
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    #success-message {
+      color: green;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 0.95em;
+      animation: fadeIn 0.5s;
+    }
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="navbar">
+    <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+  </div>
+</nav>
+
+<div class="body">
+  <div class="form-container">
+    <h2>Update Blog Post</h2>
+    <form id="postForm" enctype="multipart/form-data">
+      <input type="text" name="title" id="title" placeholder="Post Title" required />
+      <textarea name="content" id="content" placeholder="Write your content..." rows="6" required></textarea>
+      <input type="file" name="file" id="file" />
+      <button type="submit">Update</button>
+    </form>
+    <div id="error-message"></div>
+    <div id="success-message"></div>
+  </div>
+</div>
+
+<script>
+    function getQueryParam(param) {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(param);
+            }
+
+        // Get the 'id' from the URL and display it
+
+        const postId = getQueryParam('id');
+  
+  const apiUrl = `http://127.0.0.1:8000/posts/${postId}/`;
+  const token = localStorage.getItem("access_token");
+
+  // Optionally load existing post data to pre-fill form
+  fetch(apiUrl, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    document.getElementById("title").value = data.title;
+    document.getElementById("content").value = data.content;
+  })
+  .catch(error => {
+    console.error("Failed to fetch post:", error);
+  });
+
+  document.getElementById("postForm").addEventListener("submit", function(event) {
+    event.preventDefault();
+
+    const form = document.getElementById("postForm");
+    const formData = new FormData(form);
+
+    const errorBox = document.getElementById("error-message");
+    const successBox = document.getElementById("success-message");
+
+    errorBox.innerHTML = '';
+    successBox.innerHTML = '';
+
+    fetch(apiUrl, {
+      method: "PUT",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      },
+      body: formData
+    })
+    .then(async response => {
+      if (!response.ok) {
+        const errorText = await response.text();
+        errorBox.innerHTML = `Server error (${response.status}): ${errorText}`;
+        throw new Error(errorText);
+      }
+      return response.json();
+    })
+    .then(data => {
+      successBox.innerHTML = "Post updated successfully!";
+      console.log("Updated post:", data);
+    })
+    .catch(error => {
+      console.error("Update error:", error);
+    });
+  });
+</script>
+
+</body>
+</html>

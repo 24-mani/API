@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create Post</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <style>
+    body {
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+    }
+    .body {
+      background: linear-gradient(to right, #6a11cb, #2575fc);
+      font-family: 'Segoe UI', sans-serif;
+      padding: 50px;
+      color: white;
+    }
+    .container {
+      background: rgba(255,255,255,0.1);
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 30px rgba(0,0,0,0.3);
+    }
+    .field { margin-bottom: 20px; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 16px;
+      border: none;
+    }
+    button {
+      padding: 10px 20px;
+      background: #00ff95;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: 0.3s;
+      margin-right: 10px;
+    }
+    button:hover { background: #00e584; }
+    .comment-block {
+      margin-top: 15px;
+      background: rgba(0,0,0,0.2);
+      padding: 15px;
+      border-radius: 15px;
+    }
+  
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="navbar">
+      <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+    </div>
+  </nav>
+
+  <div class="body">
+
+<div class="container animate__animated animate__fadeInDown">
+  <h2>Create Post with Comments</h2>
+
+  <div class="field">
+    <input type="text" id="title" placeholder="Post Title">
+  </div>
+  <div class="field">
+    <textarea id="content" placeholder="Post Content"></textarea>
+  </div>
+
+  <div id="comments-section">
+    <h3>Comments</h3>
+  </div>
+
+  <button onclick="addComment()">+ Add Comment</button>
+  <button onclick="submitForm()">Submit</button>
+</div>
+</div>
+
+<script>
+  let currentUsername = "";
+
+  async function fetchUsername() {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      alert("Access token not found. Please log in.");
+      return;
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/user/', {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        currentUsername = data.username;
+        console.log("Logged in as:", currentUsername);
+      } else {
+        console.error("Auth failed", data);
+        alert("Authentication error. Please login again.");
+      }
+    } catch (err) {
+      console.error("Error fetching username:", err);
+      alert("Network error while fetching username.");
+    }
+  }
+
+  function addComment() {
+    if (!currentUsername) {
+      alert("User not authenticated yet.");
+      return;
+    }
+
+    const container = document.createElement('div');
+    container.classList.add('comment-block');
+    container.innerHTML = `
+      <textarea class="comment-text" placeholder="Comment text"></textarea>
+      <p><strong>Author:</strong> ${currentUsername}</p>
+    `;
+    document.getElementById('comments-section').appendChild(container);
+    gsap.from(container, {opacity: 0, y: 50, duration: 0.8, ease: "bounce.out"});
+  }
+  
+
+  async function submitForm() {
+  const title = document.getElementById('title').value.trim();
+  const content = document.getElementById('content').value.trim();
+
+  if (!title || !content) {
+    alert("Please fill in both title and content.");
+    return;
+  }
+
+  const comments = Array.from(document.getElementsByClassName('comment-block')).map(block => {
+    const commentText = block.querySelector('.comment-text').value.trim();
+    return {
+      author_1: currentUsername,
+      content: commentText
+    };
+  });
+
+  const payload = { title, content, comments };
+  console.log("Sending Payload:", payload);  // ✅ Debug log
+
+  const token = localStorage.getItem('access_token');
+
+  try {
+    const response = await fetch('http://127.0.0.1:8000/posts-with-comments/', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+    if (response.ok) {
+      alert('Post and comments created successfully!');
+      gsap.to(".container", {rotationY: 360, duration: 1.5, ease: "power2.inOut"});
+    } else {
+      console.error("Submission failed:", data);
+      alert("Submission failed: " + JSON.stringify(data));
+    }
+  } catch (error) {
+    alert('Network error');
+    console.error(error);
+  }
+}
+// Fetch username on page load
+fetchUsername();
+</script>
+
+</body>
+</html>

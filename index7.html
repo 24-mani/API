@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Post Comments</title>
+
+  <!-- PDF Generation Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --card-bg: #fff;
+      --card-border: #ddd;
+      --card-hover-bg: #f9f9f9;
+      --btn-bg: #4CAF50;
+      --btn-hover-bg: #45a049;
+      --btn-color: #fff;
+      --btn-border: none;
+      --padding: 1rem;
+      --heading-color: #333;
+    }
+
+    .body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    #post-container {
+      text-align: center;
+      margin: 2rem 0;
+    }
+
+    #comments-container {
+      width: 80%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .cards-holder {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      background-color: var(--card-hover-bg);
+    }
+
+    .card-body {
+      padding: var(--padding);
+      text-align: left;
+      position: relative;
+    }
+
+    .card-body p {
+      margin: 0;
+      font-size: 1rem;
+      color: #555;
+    }
+
+    #comment-form-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #commentContent {
+      width: 100%;
+      max-width: 600px;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--card-border);
+      border-radius: 4px;
+      font-size: 1rem;
+      color: #333;
+      resize: none;
+    }
+
+    #submitCommentBtn, #downloadPDFBtn {
+      padding: 0.5rem 2rem;
+      border: var(--btn-border);
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      color: white;
+    }
+
+    #submitCommentBtn {
+      background-color: var(--btn-bg);
+    }
+
+    #submitCommentBtn:hover {
+      background-color: var(--btn-hover-bg);
+    }
+
+    #downloadPDFBtn {
+      background-color: #2196F3;
+      margin-top: 1rem;
+    }
+
+    #downloadPDFBtn:hover {
+      background-color: #0b7dda;
+    }
+
+    .name {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 10px !important;
+      font-weight: 600;
+    }
+
+    nav {
+      background-color: #333;
+      padding: 1em 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: center;
+      gap: 3em;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s;
+    }
+
+    .navbar a:hover {
+      color: #ffcc00;
+    }
+
+    .img {
+      display: block;
+      margin: auto;
+      width: 500px;
+      height: 500px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="navbar">
+      <a href="index.html">Login</a>
+      <a href="index1.html">blog_create</a>
+      <a href="index2.html">Get All Blog</a>
+      <a href="index3.html">Get All Blog Spl</a>
+      <a href="index4.html">Nested_comments</a>
+      <a href="index5.html">Audit Log</a>
+    </div>
+  </nav>
+
+  <div id="pdf-wrapper" class="body">
+    <div id="post-container">
+      <h1 id="post-title"></h1>
+      <p id="post-content"></p>
+      <div id="img"></div>
+    </div>
+
+    <div id="comments-container">
+      <h2>Comments</h2>
+      <div id="comments-list" class="cards-holder"></div>
+
+      <div id="comment-form-container">
+        <h4>Post Comment:</h4>
+        <textarea id="commentContent" rows="4" cols="50"></textarea>
+        <br />
+        <button id="submitCommentBtn">Submit Comment</button>
+        <button id="downloadPDFBtn">Download PDF</button>
+      </div>
+      <br />
+      <div class="status" id="statusResult"></div>
+    </div>
+  </div>
+
+  <script>
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    const postId = getQueryParam("id");
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const postTitle = document.getElementById("post-title");
+      const postContent = document.getElementById("post-content");
+      const postImage = document.getElementById("img");
+      const commentsList = document.getElementById("comments-list");
+      const token = localStorage.getItem("access_token");
+
+      if (!token) {
+        alert("Please log in first.");
+        return;
+      }
+
+      fetch(`http://127.0.0.1:8000/posts/${postId}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          postTitle.innerText = "Title: " + data.title;
+          postContent.innerText = "Content: " + data.content;
+
+          if (data.file) {
+            const image = new Image();
+            image.src = `http://127.0.0.1:8000${data.file}`;
+            image.crossOrigin = "anonymous"; // KEY FIX
+            image.classList.add("img");
+            postImage.innerHTML = "";
+            postImage.appendChild(image);
+          }
+        });
+
+      fetch(`http://127.0.0.1:8000/posts/${postId}/comments/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((response) => response.json())
+        .then((comments) => {
+          commentsList.innerHTML = "";
+          comments.forEach((comment) => {
+            const card = document.createElement("div");
+            card.classList.add("card");
+            card.innerHTML = `
+              <div class="card-body">
+                <p>${comment.content}</p>
+                <p class="name">👤 ${comment.username}</p>
+              </div>
+            `;
+            commentsList.appendChild(card);
+          });
+        });
+    });
+
+    document.getElementById("submitCommentBtn").addEventListener("click", () => {
+      const token = localStorage.getItem("access_token");
+      const commentContent = document.getElementById("commentContent").value;
+
+      if (!token || !commentContent) {
+        document.getElementById("statusResult").textContent = "Please login and write a comment.";
+        return;
+      }
+
+      fetch(`http://127.0.0.1:8000/posts/${postId}/comments/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: commentContent }),
+      }).then(() => location.reload());
+    });
+
+    document.getElementById("downloadPDFBtn").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const pdfWrapper = document.getElementById("pdf-wrapper");
+      const postTitleText = document.getElementById("post-title").innerText || "document";
+
+      html2canvas(pdfWrapper, {
+        scale: 2,
+        useCORS: true
+      }).then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF("p", "mm", "a4");
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        const filename = postTitleText.replace("Title: ", "").replace(/[^\w\s]/gi, "") + ".pdf";
+        pdf.save(filename);
+      });
+    });
+  </script>
+</body>
+</html>
